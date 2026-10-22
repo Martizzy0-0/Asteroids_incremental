@@ -26,6 +26,7 @@ class GameStateManager:
         # Pygame inits
         pygame.init()
         pygame.mixer.music.load("Assets/onkey_bkgr.wav")
+        pygame.mixer.music.set_volume(0.4)
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Asteroidal")
         
@@ -94,7 +95,6 @@ class GameStateManager:
     def handle_game_over_input(self, key):
         if key == pygame.K_r:  # restart game
             self.current_state = GameState.MENU
-            pygame.mixer.music.fadeout(1000)
 
     def start_gameplay(self):
         self.current_state = GameState.GAMEPLAY
@@ -125,6 +125,7 @@ class GameStateManager:
             for asteroid in self.asteroids:
                 if asteroid.collides_with(self.player):
                     self.current_state = GameState.GAME_OVER
+                    pygame.mixer.music.fadeout(1000)
                 
                 for shot in self.shots:
                     if asteroid.collides_with(shot):
@@ -169,15 +170,18 @@ class GameStateManager:
     # Render the pause screen
     def render_pause(self):
         font = pygame.font.Font(None, 36)
-        text = font.render("Paused - Pushin' P, like Gunna", True, "white")
-        self.screen.blit(text, (SCREEN_WIDTH / 2 - 160, SCREEN_HEIGHT / 2))
+        text_pause = font.render("Paused - Pushin' P, like Gunna", True, "white")
+        text_quit = font.render("Paused - Pushin' Q, like Quitta", True, "white")
+        self.screen.blit(text_pause, (SCREEN_WIDTH / 2 - 160, SCREEN_HEIGHT / 2))
+        self.screen.blit(text_quit, (SCREEN_WIDTH / 2 - 160, SCREEN_HEIGHT / 2 + 50))
+        
 
     # Render the game over screen
     def render_game_over(self):
         font = pygame.font.Font(None, 36)
         text = font.render("Game Over - Press R for menu", True, "white")
         text_score = font.render(f"Your score: {self.score}", True, "white")
-        text_money = font.render(f"You have earned {self.money} so far ^___^", True, "white")
+        text_money = font.render(f"You have earned {self.money} monies so far ^___^", True, "white")
         self.screen.blit(text, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 100))
         self.screen.blit(text_score, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2))
         self.screen.blit(text_money, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 100))
