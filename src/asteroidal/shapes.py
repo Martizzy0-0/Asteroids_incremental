@@ -1,5 +1,8 @@
 import pygame
 import random
+import sys
+import os
+
 from asteroidal.constants import *
 
 
@@ -62,7 +65,8 @@ class Player(CircleShape):
     
     def shoot(self):
             shot = Shot(self.position.x, self.position.y)
-            shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED      
+            shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
+            shot.sound()      
     
     def update(self, dt: float) -> None:
         keys = pygame.key.get_pressed()
@@ -84,6 +88,8 @@ class Player(CircleShape):
                 self.shot_cooldown = PLAYER_SHOOT_COOLDOWN_SECONDS
 
 class Shot(CircleShape):
+    __shot_sound = pygame.mixer.Sound("Assets/shoot.wav")
+    
     def __init__(self, x, y):
         super().__init__(x, y, SHOT_RADIUS)
 
@@ -93,7 +99,12 @@ class Shot(CircleShape):
     def update(self, dt: float) -> None:
         self.position += self.velocity * dt
 
+    def sound(self):
+        self.__shot_sound.play()
+
 class Asteroid(CircleShape):
+    __destroy_sound = pygame.mixer.Sound("Assets/asteroid_destroy.wav")
+    
     def __init__(self, x: float, y: float, radius: float) -> None:
         super().__init__(x, y, radius)
         self.x = x
@@ -107,6 +118,7 @@ class Asteroid(CircleShape):
     
     def split(self):
         self.kill()
+        self.__destroy_sound.play()
         
         if self.radius <= ASTEROID_MIN_RADIUS:
             return

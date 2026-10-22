@@ -2,6 +2,12 @@ import pygame
 import sys
 import os
 
+# audio handling in WLS2 and mixer.init
+if sys.platform == "linux":
+    os.environ["SDL_AUDIODRIVER"] = "dummy"
+
+pygame.mixer.init()
+
 from enum import Enum
 from asteroidal.constants import *
 from asteroidal.shapes import *
@@ -17,18 +23,17 @@ class GameState(Enum):
 
 class GameStateManager:
     def __init__(self):    
-        # audio handling in WLS2
-        if sys.platform == "linux":
-            os.environ["SDL_AUDIODRIVER"] = "dummy"
-        
         # Pygame inits
         pygame.init()
+        pygame.mixer.music.load("Assets/onkey_bkgr.wav")
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Asteroidal")
         
         # define variables
         self.clock = pygame.time.Clock()
         self.dt: float = 0.0
+        self.score: int = 0
+        self.money: int = 0
         
         # set gamestate for startup
         self.current_state = GameState.MENU
@@ -75,11 +80,13 @@ class GameStateManager:
     def handle_gameplay_input(self, key):
         if key == pygame.K_p:  # pause
             self.current_state = GameState.PAUSE
+            pygame.mixer.music.pause()
 
     # Handle input events in the PAUSE state
     def handle_pause_input(self, key):
         if key == pygame.K_p:  # resume gameplay
             self.current_state = GameState.GAMEPLAY
+            pygame.mixer.music.unpause()
         elif key == pygame.K_q:  # quit game
             self.quit_game()
 
@@ -87,9 +94,15 @@ class GameStateManager:
     def handle_game_over_input(self, key):
         if key == pygame.K_r:  # restart game
             self.current_state = GameState.MENU
+            pygame.mixer.music.fadeout(1000)
 
     def start_gameplay(self):
-        self.current_state = GameState.GAMEPLAY        
+        self.current_state = GameState.GAMEPLAY
+        
+        # clean-up
+        self.score = 0
+        for sprite in self.drawable:
+            sprite.kill()        
         
         # Assigning containers
         Player.containers = (self.updatable, self.drawable)
@@ -99,6 +112,9 @@ class GameStateManager:
         
         self.player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT /2, PLAYER_RADIUS)
         AsteroidField()
+        
+        # start bkgr track
+        pygame.mixer.music.play(-1)
 
 
     # Update the game state
@@ -114,6 +130,8 @@ class GameStateManager:
                     if asteroid.collides_with(shot):
                         shot.kill()
                         asteroid.split()
+                        self.score += 1
+                        self.money += 1
 
 
     # Render the current state
@@ -143,6 +161,10 @@ class GameStateManager:
     def render_gameplay(self):
         for sprite in self.drawable:
             sprite.draw(self.screen)
+        
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Score: {self.score}", True, "white")        
+        self.screen.blit(text, (SCREEN_WIDTH / 2 - 50, 50))
 
     # Render the pause screen
     def render_pause(self):
@@ -154,7 +176,11 @@ class GameStateManager:
     def render_game_over(self):
         font = pygame.font.Font(None, 36)
         text = font.render("Game Over - Press R for menu", True, "white")
-        self.screen.blit(text, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2))
+        text_score = font.render(f"Your score: {self.score}", True, "white")
+        text_money = font.render(f"You have earned {self.money} so far ^___^", True, "white")
+        self.screen.blit(text, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 - 100))
+        self.screen.blit(text_score, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2))
+        self.screen.blit(text_money, (SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 100))
 
     # Quit the game
     def quit_game(self):
