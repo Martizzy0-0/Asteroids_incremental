@@ -1,6 +1,6 @@
 Incremental Asteroids game - currently not much to see but content will soon be added
 
-Onkey is also a dependency
+Onkey is also a dependency (README.md should probably be viewed as a file)
 
     :--===--------------------------------------------------------.::::::----------------------------------------------------------:::::.    
   :--==========================================================-::::::::::-==============================================================-:  

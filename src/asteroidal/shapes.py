@@ -37,8 +37,9 @@ class Player(CircleShape):
     rotation = 0
     shot_cooldown = 0
     
-    def __init__(self, x, y, PLAYER_RADIUS):
+    def __init__(self, x, y, PLAYER_RADIUS, PLAYER_HP):
         super().__init__(x, y, PLAYER_RADIUS)
+        self.hp = PLAYER_HP
         
     def draw(self, screen) -> None:
         __polygons = self.triangle()

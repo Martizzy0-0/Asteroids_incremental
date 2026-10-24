@@ -35,6 +35,7 @@ class GameStateManager:
         self.dt: float = 0.0
         self.score: int = 0
         self.money: int = 0
+        self.invulnerability = PLAYER_INVUL_SECONDS
         
         # set gamestate for startup
         self.current_state = GameState.MENU
@@ -47,6 +48,9 @@ class GameStateManager:
         
         # Player reference
         self.player: Player | None = None
+        
+        # Game sounds (not in objects)
+        self.player_damage_sound = pygame.mixer.Sound("Assets/hurt_sound.wav")
 
     def start(self):
         while True:
@@ -110,7 +114,7 @@ class GameStateManager:
         AsteroidField.containers = (self.updatable)
         Shot.containers = (self.shots, self.updatable, self.drawable)
         
-        self.player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT /2, PLAYER_RADIUS)
+        self.player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT /2, PLAYER_RADIUS, PLAYER_HP)
         AsteroidField()
         
         # start bkgr track
@@ -121,12 +125,21 @@ class GameStateManager:
     def update(self):
         if self.current_state == GameState.GAMEPLAY:
             self.updatable.update(self.dt)
-
+    
             for asteroid in self.asteroids:
-                if asteroid.collides_with(self.player):
-                    self.current_state = GameState.GAME_OVER
-                    pygame.mixer.music.fadeout(1000)
-                
+                if self.invulnerability > 0:
+                    self.invulnerability -= self.dt
+                else:
+                    if asteroid.collides_with(self.player) and self.player is not None:
+                        self.player.hp -= 1
+                        if self.player.hp == 0:
+                            self.current_state = GameState.GAME_OVER
+                            pygame.mixer.music.fadeout(1000)
+                        else:
+                            asteroid.split()
+                            self.invulnerability = PLAYER_INVUL_SECONDS
+                            self.player_damage_sound.play()
+            
                 for shot in self.shots:
                     if asteroid.collides_with(shot):
                         shot.kill()
@@ -160,12 +173,17 @@ class GameStateManager:
 
     # Render the gameplay screen
     def render_gameplay(self):
+        assert self.player is not None, "Player can not be None type"
+        
         for sprite in self.drawable:
             sprite.draw(self.screen)
         
         font = pygame.font.Font(None, 36)
-        text = font.render(f"Score: {self.score}", True, "white")        
-        self.screen.blit(text, (SCREEN_WIDTH / 2 - 50, 50))
+        text_score = font.render(f"Score: {self.score}", True, "white")
+        text_hp = font.render(f"HP: {self.player.hp} / 3", True, "white")
+        self.screen.blit(text_score, (SCREEN_WIDTH / 2 - 50, 50))
+        self.screen.blit(text_hp, (SCREEN_WIDTH / 2 - 50, 100))
+
 
     # Render the pause screen
     def render_pause(self):
